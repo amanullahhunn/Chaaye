@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHAAYE JUNCTION - Freshness in Every Sip</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- PDF Generation Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Satisfy&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #FFF8E1;
+        }
+        .font-script {
+            font-family: 'Satisfy', cursive;
+        }
+        .chai-bg {
+            background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.unsplash.com/photo-1561336313-0bd5e0b27ec8?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.6);
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 10px;
+        }
+
+        /* Splash Screen Animation */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #FFF8E1;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 1s ease-out, visibility 1s ease-out;
+            visibility: visible;
+            opacity: 1;
+        }
+        #splash-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        @keyframes mug-animation {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0); }
+        }
+        #splash-screen .fa-mug-hot {
+            font-size: 80px;
+            color: #795548;
+            animation: mug-animation 2s infinite ease-in-out;
+        }
+
+        /* Order Confirmed Animation */
+        #order-confirmed-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            z-index: 199;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        #order-confirmed-animation.show {
+            display: flex;
+            opacity: 1;
+        }
+        @keyframes checkmark-pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+        #order-confirmed-animation .fa-check-circle {
+            font-size: 100px;
+            color: #28a745;
+            animation: checkmark-pop 0.5s ease-out;
+        }
+        
+        /* Message Box Style */
+        #message-box {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background-color: #10B981;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 200;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            pointer-events: none;
+        }
+        #message-box.show {
+            opacity: 1;
+        }
+
+        /* Search Bar */
+        #search-container {
+            transition: all 0.3s ease;
+        }
+        
+        /* Cart Badge Pulse Animation */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .pulse {
+            animation: pulse 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="text-gray-800 flex flex-col min-h-screen">
+
+    <!-- Splash Screen -->
+    <div id="splash-screen">
+        <i class="fas fa-mug-hot"></i>
+        <h1 class="text-5xl md:text-7xl font-bold mb-4 font-script text-amber-900 mt-6">Chaaye Junction</h1>
+        <p class="text-xl md:text-2xl font-light tracking-widest uppercase">Freshness in Every Sip</p>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="bg-amber-900 text-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="#" class="flex items-center gap-2">
+                <i class="fas fa-mug-hot text-orange-400 text-2xl"></i>
+                <span class="font-bold text-xl tracking-wider">CHAAYE JUNCTION</span>
+            </a>
+            <div class="flex items-center gap-4">
+                <!-- Search Bar -->
+                <div id="search-container" class="relative hidden md:block">
+                    <input type="text" id="search-input" placeholder="Search menu..." 
+                           class="bg-amber-800 text-white placeholder-amber-200 rounded-full py-2 px-4 w-64 focus:outline-none focus:ring-2 focus:ring-orange-400 transition-all">
+                    <i class="fas fa-search absolute right-3 top-2.5 text-amber-200"></i>
+                </div>
+                <a href="#cart-section" class="relative p-2" onclick="showCart()">
+                    <i class="fas fa-shopping-basket text-xl"></i>
+                    <span id="cart-count" class="absolute -top-1 -right-1 bg-orange-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="chai-bg text-white py-24 text-center px-4">
+        <h1 class="text-5xl md:text-7xl font-bold mb-4 font-script text-orange-400">Chaaye Junction</h1>
+        <p class="text-xl md:text-2xl font-light tracking-widest uppercase mb-8">Freshness in Every Sip</p>
+        <a href="#menu" class="bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-8 rounded-full transition duration-300 inline-block shadow-lg animate-bounce">
+            View Menu
+        </a>
+    </header>
+
+    <!-- Menu Section -->
+    <main id="menu" class="container mx-auto px-4 py-12 flex-grow">
+        
+        <!-- Search Results Section -->
+        <div id="search-results" class="mb-12 hidden">
+            <div class="flex items-center gap-3 mb-6 border-b-2 border-amber-200 pb-2">
+                <i class="fas fa-search text-amber-700 text-3xl"></i>
+                <h2 class="text-3xl font-bold text-amber-900">Search Results</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="search-grid">
+                <!-- Search results injected by JS -->
+            </div>
+        </div>
+        
+        <!-- Category: Chaaye Variants -->
+        <div class="mb-12">
+            <div class="flex items-center gap-3 mb-6 border-b-2 border-amber-200 pb-2">
+                <i class="fas fa-mug-hot text-amber-700 text-3xl"></i>
+                <h2 class="text-3xl font-bold text-amber-900">Chaaye Variants</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="chai-grid">
+                <!-- Items injected by JS -->
+            </div>
+        </div>
+
+        <!-- Category: Coffee -->
+        <div class="mb-12">
+            <div class="flex items-center gap-3 mb-6 border-b-2 border-amber-200 pb-2">
+                <i class="fas fa-coffee text-amber-700 text-3xl"></i>
+                <h2 class="text-3xl font-bold text-amber-900">Coffee</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="coffee-grid">
+                <!-- Items injected by JS -->
+            </div>
+        </div>
+
+        <!-- Category: Desserts & Snacks -->
+        <div class="mb-12">
+            <div class="flex items-center gap-3 mb-6 border-b-2 border-amber-200 pb-2">
+                <i class="fas fa-cookie-bite text-amber-700 text-3xl"></i>
+                <h2 class="text-3xl font-bold text-amber-900">Desserts & Snacks</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="snacks-grid">
+                <!-- Items injected by JS -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Floating Cart / Bottom Sheet -->
+    <div id="cart-section" class="fixed bottom-0 left-0 w-full bg-white shadow-[0_-5px_20px_rgba(0,0,0,0.2)] transform translate-y-full transition-transform duration-300 z-40 rounded-t-2xl">
+        <div class="p-4 max-w-4xl mx-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-amber-900">Your Order</h3>
+                <button onclick="toggleCart()" class="text-gray-500 hover:text-red-500">
+                    <i class="fas fa-chevron-down"></i> Close
+                </button>
+            </div>
+            
+            <div id="cart-items" class="max-h-60 overflow-y-auto mb-4 text-sm">
+                <p class="text-gray-400 italic">Your cart is empty.</p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row justify-between items-center border-t pt-4 gap-4">
+                <div class="flex gap-4">
+                     <span class="text-gray-600">Total:</span>
+                     <span id="cart-total" class="text-2xl font-bold text-amber-900">Rs. 0</span>
+                </div>
+                <div class="flex gap-2">
+                     <button onclick="downloadPDFBill()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg flex items-center gap-2 transition">
+                        <i class="fas fa-file-pdf"></i> Bill PDF
+                    </button>
+                    <button onclick="openOrderModal()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg flex items-center gap-2 transition">
+                        <i class="fab fa-whatsapp text-xl"></i> Place Order
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Button for Cart (Visible on Mobile) -->
+    <button onclick="toggleCart()" id="fab-cart" class="fixed bottom-6 right-6 bg-amber-900 text-white p-4 rounded-full shadow-2xl z-30 hidden hover:scale-110 transition">
+        <i class="fas fa-shopping-basket"></i>
+    </button>
+
+    <!-- Order Details Modal -->
+    <div id="order-details-modal" class="modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-amber-900">Delivery Details</h3>
+                <button onclick="closeOrderModal()" class="text-gray-500 hover:text-red-500 text-2xl">&times;</button>
+            </div>
+            <form id="order-form" onsubmit="confirmAndSendOrder(event)">
+                <div class="mb-4">
+                    <label for="customer-name" class="block text-sm font-medium text-gray-700">Full Name*</label>
+                    <input type="text" id="customer-name" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-amber-500 focus:border-amber-500" required>
+                </div>
+                <div class="mb-4">
+                    <label for="customer-address" class="block text-sm font-medium text-gray-700">Delivery Address*</label>
+                    <textarea id="customer-address" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-amber-500 focus:border-amber-500" required></textarea>
+                </div>
+                <div class="mb-4">
+                    <label for="customer-phone" class="block text-sm font-medium text-gray-700">Phone Number*</label>
+                    <input type="tel" id="customer-phone" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-amber-500 focus:border-amber-500" required>
+                </div>
+                <div class="mb-4">
+                    <label for="customer-instructions" class="block text-sm font-medium text-gray-700">Special Instructions (Optional)</label>
+                    <input type="text" id="customer-instructions" placeholder="e.g., less sugar, extra spicy" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-amber-500 focus:border-amber-500">
+                </div>
+                <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg flex items-center justify-center gap-2 transition">
+                    <i class="fab fa-whatsapp text-xl"></i> Confirm & Send Order
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Order Confirmed Animation Screen -->
+    <div id="order-confirmed-animation">
+        <i class="fas fa-check-circle mb-4"></i>
+        <h2 class="text-3xl font-bold text-gray-800">Order Confirmed!</h2>
+        <p class="text-lg text-gray-600 mb-6">Your order is on its way.</p>
+        <div class="bg-gray-100 p-4 rounded text-center text-sm text-gray-500">
+            <p>Created By: Amanullah</p>
+            <p>Contact: 03015956684</p>
+        </div>
+    </div>
+
+    <!-- Global Message Box -->
+    <div id="message-box"></div>
+
+    <!-- Footer -->
+    <footer class="bg-amber-900 text-amber-100 py-8 mt-auto">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="text-2xl font-script mb-2">Chaaye Junction</h2>
+            <p class="mb-4 text-sm opacity-80">Freshness in Every Sip</p>
+            <div class="flex justify-center gap-4 mb-4">
+                <a href="tel:+923441246946" class="hover:text-white transition"><i class="fas fa-phone"></i> +92 344 1246946</a>
+            </div>
+            <hr class="border-t border-amber-700 w-1/4 mx-auto my-4"/>
+            <div class="text-xs opacity-70">
+                <p>Created By: <strong>Amanullah</strong></p>
+                <p>Contact: <strong>03015956684</strong></p>
+            </div>
+            <div class="text-xs opacity-50 mt-4">
+                &copy; 2024 Chaaye Junction. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // --- DATA ---
+        const menuData = {
+            chai: [
+                { name: "Tandoori Chaaye", price: 200, desc: "Smoky clay pot flavor", icon: "fire" },
+                { name: "Karak Chaaye", price: 150, desc: "Strong & refreshing", icon: "mug-hot" },
+                { name: "Doodh Patti", price: 180, desc: "Rich milk tea", icon: "blender" },
+                { name: "Qehwa", price: 100, desc: "Traditional green tea", icon: "leaf" },
+                { name: "Green Tea", price: 100, desc: "Healthy & light", icon: "seedling" }
+            ],
+            coffee: [
+                { name: "Beat Coffee", price: 250, desc: "Frothy hand-beaten", icon: "coffee" },
+                { name: "Black Coffee", price: 150, desc: "Pure caffeine kick", icon: "mug-saucer" }
+            ],
+            snacks: [
+                { name: "Hot Gulab Jamun", price: 200, desc: "Warm sweet delight", icon: "circle" },
+                { name: "Boiled Egg", price: 80, desc: "Simple protein snack", icon: "egg" }
+            ]
+        };
+
+        const phoneNumber = "923441246946";
+        const restaurantPhone = "+92 344 1246946";
+        let cart = {};
+
+        // Load cart from localStorage on page load
+        function loadCartFromStorage() {
+            const savedCart = localStorage.getItem('chaayeJunctionCart');
+            if (savedCart) {
+                cart = JSON.parse(savedCart);
+                updateCartUI();
+            }
+        }
+
+        // Save cart to localStorage
+        function saveCartToStorage() {
+            localStorage.setItem('chaayeJunctionCart', JSON.stringify(cart));
+        }
+
+        // --- GLOBAL UI FUNCTIONS ---
+
+        // Custom Message Box instead of alert()
+        function showMessage(text, isError = false) {
+            const box = document.getElementById('message-box');
+            box.textContent = text;
+            box.style.backgroundColor = isError ? '#EF4444' : '#10B981';
+            box.classList.add('show');
+            setTimeout(() => {
+                box.classList.remove('show');
+            }, 3000);
+        }
+
+        function showOrderConfirmedAnimation() {
+            const anim = document.getElementById('order-confirmed-animation');
+            anim.classList.add('show');
+            
+            setTimeout(() => {
+                anim.classList.remove('show');
+            }, 3000);
+        }
+
+        // --- Splash Screen ---
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('splash-screen').classList.add('hidden');
+            }, 2500);
+        });
+
+        // --- SEARCH FUNCTIONALITY ---
+        function setupSearch() {
+            const searchInput = document.getElementById('search-input');
+            const searchResults = document.getElementById('search-results');
+            const searchGrid = document.getElementById('search-grid');
+            
+            searchInput.addEventListener('input', function() {
+                const query = this.value.toLowerCase().trim();
+                
+                if (query.length < 2) {
+                    searchResults.classList.add('hidden');
+                    return;
+                }
+                
+                // Hide all category sections
+                document.querySelectorAll('main > div:not(#search-results)').forEach(section => {
+                    section.classList.add('hidden');
+                });
+                
+                // Show search results
+                searchResults.classList.remove('hidden');
+                
+                // Filter items
+                const allItems = [...menuData.chai, ...menuData.coffee, ...menuData.snacks];
+                const filteredItems = allItems.filter(item => 
+                    item.name.toLowerCase().includes(query) || 
+                    item.desc.toLowerCase().includes(query)
+                );
+                
+                // Display results
+                if (filteredItems.length > 0) {
+                    searchGrid.innerHTML = filteredItems.map(item => createCard(item, 'search')).join('');
+                } else {
+                    searchGrid.innerHTML = '<p class="text-gray-500 col-span-3 text-center py-8">No items found matching your search.</p>';
+                }
+            });
+            
+            // Clear search when clicking on logo or menu items
+            document.querySelector('nav a').addEventListener('click', function() {
+                searchInput.value = '';
+                searchResults.classList.add('hidden');
+                document.querySelectorAll('main > div:not(#search-results)').forEach(section => {
+                    section.classList.remove('hidden');
+                });
+            });
+        }
+
+        // --- RENDER MENU ---
+        function createCard(item, category) {
+            return `
+            <div class="bg-white rounded-xl shadow-md p-5 card-hover border border-amber-50 transition duration-300 flex justify-between items-center">
+                <div>
+                    <h3 class="font-bold text-lg text-gray-800">${item.name}</h3>
+                    <p class="text-xs text-gray-500 mb-2">${item.desc}</p>
+                    <span class="text-amber-700 font-bold">Rs. ${item.price}</span>
+                </div>
+                <div class="flex flex-col items-end gap-2">
+                    <i class="fas fa-${item.icon} text-amber-200 text-4xl absolute opacity-20 pointer-events-none ml-[-10px]"></i>
+                    <button onclick="addToCart('${item.name}', ${item.price})" class="bg-amber-100 hover:bg-amber-200 text-amber-900 text-sm px-4 py-2 rounded-lg font-semibold transition">
+                        Add +
+                    </button>
+                </div>
+            </div>
+            `;
+        }
+
+        function renderMenu() {
+            document.getElementById('chai-grid').innerHTML = menuData.chai.map(i => createCard(i, 'chai')).join('');
+            document.getElementById('coffee-grid').innerHTML = menuData.coffee.map(i => createCard(i, 'coffee')).join('');
+            document.getElementById('snacks-grid').innerHTML = menuData.snacks.map(i => createCard(i, 'snacks')).join('');
+        }
+
+        // --- CART LOGIC ---
+        function addToCart(name, price) {
+            if (cart[name]) {
+                cart[name].qty += 1;
+            } else {
+                cart[name] = { price: price, qty: 1 };
+            }
+            updateCartUI();
+            saveCartToStorage();
+            showCart();
+            
+            // Visual feedback with pulse animation
+            const cartCount = document.getElementById('cart-count');
+            cartCount.classList.add('pulse');
+            setTimeout(() => {
+                cartCount.classList.remove('pulse');
+            }, 500);
+            
+            const btn = event.target;
+            const originalText = btn.innerText;
+            btn.innerText = "Added!";
+            btn.classList.add("bg-green-100", "text-green-800");
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.classList.remove("bg-green-100", "text-green-800");
+            }, 1000);
+        }
+
+        function removeFromCart(name) {
+            if (cart[name]) {
+                cart[name].qty -= 1;
+                if (cart[name].qty <= 0) delete cart[name];
+            }
+            updateCartUI();
+            saveCartToStorage();
+        }
+        
+        function updateQuantity(name, newQty) {
+            if (newQty <= 0) {
+                delete cart[name];
+            } else {
+                cart[name].qty = newQty;
+            }
+            updateCartUI();
+            saveCartToStorage();
+        }
+
+        function updateCartUI() {
+            const cartItemsContainer = document.getElementById('cart-items');
+            const cartCount = document.getElementById('cart-count');
+            const cartTotal = document.getElementById('cart-total');
+            const fabCart = document.getElementById('fab-cart');
+
+            let total = 0;
+            let count = 0;
+            let html = '';
+
+            if (Object.keys(cart).length === 0) {
+                html = '<p class="text-gray-400 italic text-center py-2">Your cart is empty.</p>';
+                fabCart.classList.add('hidden');
+                cartCount.classList.add('hidden');
+            } else {
+                fabCart.classList.remove('hidden');
+                cartCount.classList.remove('hidden');
+                
+                html = '<ul class="space-y-3">';
+                for (const [name, item] of Object.entries(cart)) {
+                    const itemTotal = item.price * item.qty;
+                    total += itemTotal;
+                    count += item.qty;
+                    html += `
+                        <li class="flex justify-between items-center border-b border-dashed border-gray-200 pb-2">
+                            <div class="flex-1">
+                                <span class="text-gray-700 font-medium">${name}</span>
+                                <span class="text-xs text-gray-500 block">Rs. ${item.price} each</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="updateQuantity('${name}', ${item.qty - 1})" class="text-gray-500 hover:text-red-500 text-sm px-2 border border-gray-300 rounded">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <span class="text-gray-900 font-bold mx-1">${item.qty}</span>
+                                <button onclick="updateQuantity('${name}', ${item.qty + 1})" class="text-gray-500 hover:text-green-500 text-sm px-2 border border-gray-300 rounded">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                <span class="text-gray-900 font-bold ml-2 w-16 text-right">Rs. ${itemTotal}</span>
+                            </div>
+                        </li>
+                    `;
+                }
+                html += '</ul>';
+            }
+
+            cartItemsContainer.innerHTML = html;
+            cartTotal.innerText = `Rs. ${total}`;
+            cartCount.innerText = count;
+        }
+
+        function toggleCart() {
+            const cartSection = document.getElementById('cart-section');
+            cartSection.classList.toggle('translate-y-full');
+        }
+
+        function showCart() {
+            const cartSection = document.getElementById('cart-section');
+            cartSection.classList.remove('translate-y-full');
+        }
+
+        // --- MODAL LOGIC ---
+        function openOrderModal() {
+            if (Object.keys(cart).length === 0) {
+                showMessage("Please add items to your cart first!", true);
+                return;
+            }
+            document.getElementById('order-details-modal').style.display = 'block';
+        }
+
+        function closeOrderModal() {
+            document.getElementById('order-details-modal').style.display = 'none';
+        }
+
+        // --- ORDER CONFIRMATION & WHATSAPP ---
+        function confirmAndSendOrder(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('customer-name').value;
+            const address = document.getElementById('customer-address').value;
+            const phone = document.getElementById('customer-phone').value;
+            const instructions = document.getElementById('customer-instructions').value;
+            
+            if (!name || !address || !phone) {
+                showMessage("Please fill in all required fields (Name, Address, Phone).", true);
+                return;
+            }
+
+            // WhatsApp message with emojis
+            let message = `🍵 *--- NEW ORDER from Chaaye Junction ---* ☕\n\n`;
+            
+            message += `📝 *Order Summary:*\n`;
+            let total = 0;
+            for (const [itemName, item] of Object.entries(cart)) {
+                const itemTotal = item.price * item.qty;
+                total += itemTotal;
+                message += `- ${itemName} (x${item.qty}): Rs. ${itemTotal}\n`;
+            }
+            
+            message += `\n💰 *Total Bill: Rs. ${total}*\n`;
+
+            message += `\n🏠 *Customer Details:*\n`;
+            message += `🧑 Name: ${name}\n`;
+            message += `📞 Phone: ${phone}\n`;
+            message += `📍 Address: ${address}\n`;
+            if (instructions) {
+                message += `📋 Instructions: ${instructions}\n`;
+            }
+
+            message += `\n------------------\n`;
+            message += `📱 Restaurant Contact: ${restaurantPhone}\n`;
+            message += `👨‍💼 Created By: Amanullah\n`;
+            message += `📞 Contact: 03015956684`;
+
+            const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+            window.open(url, '_blank');
+
+            showOrderConfirmedAnimation();
+
+            // Clear cart and close modals
+            cart = {};
+            updateCartUI();
+            saveCartToStorage();
+            closeOrderModal();
+            toggleCart();
+            
+            // Reset form
+            document.getElementById('order-form').reset();
+        }
+
+        // --- PDF DOWNLOAD ---
+        function downloadPDFBill() {
+            if (Object.keys(cart).length === 0) {
+                showMessage("Please add items to your cart first!", true);
+                return;
+            }
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                const customerName = document.getElementById('customer-name').value || "Guest User";
+                const date = new Date().toLocaleString();
+                let total = 0;
+                let y = 50;
+
+                // Add light background color
+                doc.setFillColor(255, 248, 240);
+                doc.rect(0, 0, doc.internal.pageSize.width, doc.internal.pageSize.height, 'F');
+
+                // Add "Chaaye Junction" text watermark at different angles and positions
+                doc.setTextColor(220, 220, 200);
+                doc.setFontSize(25);
+                doc.setFont('helvetica', 'bold');
+                
+                // Add multiple watermarks at different positions and rotations
+                const addWatermark = (text, x, y, angle) => {
+                    doc.saveGraphicsState();
+                    doc.text(text, x, y, { angle: angle });
+                    doc.restoreGraphicsState();
+                };
+
+                // Add multiple "Chaaye Junction" watermarks
+                addWatermark("Chaaye Junction", 40, 60, 45);
+                addWatermark("Chaaye Junction", 120, 100, -30);
+                addWatermark("Chaaye Junction", 60, 140, 60);
+                addWatermark("Chaaye Junction", 140, 180, -45);
+                addWatermark("Chaaye Junction", 80, 220, 30);
+                addWatermark("Chaaye Junction", 160, 260, -60);
+
+                // Reset text color for content
+                doc.setTextColor(0, 0, 0);
+
+                // Header
+                doc.setFontSize(22);
+                doc.setFont('helvetica', 'bold');
+                doc.text("CHAAYE JUNCTION", 105, 20, { align: 'center' });
+                
+                doc.setFontSize(12);
+                doc.setFont('helvetica', 'normal');
+                doc.text("Freshness in Every Sip", 105, 28, { align: 'center' });
+
+                // Restaurant Contact
+                doc.setFontSize(10);
+                doc.text(`Contact: ${restaurantPhone}`, 105, 35, { align: 'center' });
+
+                // Bill Info
+                doc.setFontSize(10);
+                doc.text(`Bill To: ${customerName}`, 20, y);
+                doc.text(`Date: ${date}`, 190, y, { align: 'right' });
+                y += 10;
+                
+                // Separator line
+                doc.setDrawColor(139, 69, 19);
+                doc.line(20, y, 190, y);
+                y += 15;
+
+                // Table Header
+                doc.setFont('helvetica', 'bold');
+                doc.text("Item", 20, y);
+                doc.text("Qty", 120, y, { align: 'center' });
+                doc.text("Price", 150, y, { align: 'right' });
+                doc.text("Total", 190, y, { align: 'right' });
+                doc.setFont('helvetica', 'normal');
+                y += 7;
+
+                // Table Items
+                for (const [name, item] of Object.entries(cart)) {
+                    const itemTotal = item.price * item.qty;
+                    total += itemTotal;
+                    
+                    doc.text(name, 20, y);
+                    doc.text(item.qty.toString(), 120, y, { align: 'center' });
+                    doc.text(`Rs. ${item.price}`, 150, y, { align: 'right' });
+                    doc.text(`Rs. ${itemTotal}`, 190, y, { align: 'right' });
+                    y += 7;
+                    
+                    // Add new page if needed
+                    if (y > 250) {
+                        doc.addPage();
+                        y = 30;
+                        
+                        // Add watermarks to new page
+                        doc.setFillColor(255, 248, 240);
+                        doc.rect(0, 0, doc.internal.pageSize.width, doc.internal.pageSize.height, 'F');
+                        
+                        doc.setTextColor(220, 220, 200);
+                        doc.setFontSize(25);
+                        doc.setFont('helvetica', 'bold');
+                        addWatermark("Chaaye Junction", 50, 70, 45);
+                        addWatermark("Chaaye Junction", 130, 110, -30);
+                        addWatermark("Chaaye Junction", 70, 150, 60);
+                        addWatermark("Chaaye Junction", 150, 190, -45);
+                        doc.setTextColor(0, 0, 0);
+                    }
+                }
+
+                // Total
+                y += 5;
+                doc.line(20, y, 190, y);
+                y += 7;
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(14);
+                doc.text("GRAND TOTAL", 20, y);
+                doc.text(`Rs. ${total}`, 190, y, { align: 'right' });
+                
+                // Footer
+                const pageHeight = doc.internal.pageSize.height;
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8);
+                doc.text("Thank you for your order!", 105, pageHeight - 15, { align: 'center' });
+                doc.text(`For any queries, contact: ${restaurantPhone}`, 105, pageHeight - 10, { align: 'center' });
+                
+                doc.setFont('helvetica', 'bold');
+                doc.text("Created By: Amanullah | Contact: 03015956684", 105, pageHeight - 5, { align: 'center' });
+
+                doc.save(`ChaayeJunction_Bill_${Date.now()}.pdf`);
+                showMessage("PDF Bill download shuru ho gaya hai.");
+
+            } catch (e) {
+                showMessage("PDF tayyar karne mein masla aaya. Console check karein.", true);
+                console.error("PDF Generation Error:", e);
+            }
+        }
+
+        // Initialize
+        renderMenu();
+        setupSearch();
+        loadCartFromStorage();
+    </script>
+</body>
+</html>
